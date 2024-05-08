@@ -1,4 +1,5 @@
 const express = require("express");
+const https = require("https");
 const requestIp = require("request-ip");
 const geoip = require("geoip-lite");
 
@@ -12,12 +13,33 @@ app.get("/", (req, res) => {
   const ipAddress = requestIp.getClientIp(req);
   const geoLoc = geoip.lookup(ipAddress);
 
-  const resp = {
-    ipAddress,
-    geoLoc,
+  const options = {
+    path: `/${ipAddress}/json/`,
+    host: "ipapi.co",
+    port: 443,
+    headers: { "User-Agent": "nodejs-ipapi-v1.02" },
   };
 
-  res.send(resp);
+  https.get(options, function (resp) {
+    let body = "";
+
+    resp.on("data", function (data) {
+      body += data;
+    });
+
+    resp.on("end", function () {
+      let loc = JSON.parse(body);
+      console.log(loc);
+      res.send(loc);
+    });
+  });
+
+  // const resp = {
+  //   ipAddress,
+  //   geoLoc,
+  // };
+
+  // res.send(resp);
 });
 
 app.listen(PORT, () => {
